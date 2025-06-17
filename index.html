@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>会派別議席数と会議日数の推移</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f8f9fa; }
+    canvas { max-width: 100%; margin-bottom: 3em; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 1em; }
+    h1, h2 { color: #333; }
+  </style>
+</head>
+<body>
+  <h1>目黒区議会データ可視化</h1>
+
+  <h2>会派別議席数の年度推移</h2>
+  <canvas id="kaihaChart"></canvas>
+
+  <h2>年度別 会議日数の合計（定例会＋臨時会）</h2>
+  <canvas id="kaigiChart"></canvas>
+
+  <script>
+    // 会派別人数推移グラフ
+    Papa.parse('data/kaihabetuuchiwake.csv', {
+      download: true,
+      header: true,
+      complete: function(results) {
+        const raw = results.data;
+        const years = [...new Set(raw.map(row => row['年度']))].sort();
+        const parties = [...new Set(raw.map(row => row['会派名']))];
+
+        const colors = [
+          '#3366cc', '#dc3912', '#ff9900', '#109618', '#990099',
+          '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395'
+        ];
+
+        const datasets = parties.map((party, i) => {
+          const data = years.map(year => {
+            const match = raw.find(row => row['年度'] === year && row['会派名'] === party);
+            return match ? parseInt(match['人数']) : 0;
+          });
+          return {
+            label: party,
+            data: data,
+            tension: 0.3,
+            borderColor: colors[i % colors.length],
+            backgroundColor: colors[i % colors.length],
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false
+          };
+        });
+
+        const ctx = document.getElementById('kaihaChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: years,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: '会派別議席数の年度推移',
+                font: {
+                  size: 20
+                }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              },
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // 会議日数の年度合計グラフ（リッチ化）
+    Papa.parse('data/kaisaikaisuu.csv', {
+      download: true,
+      header: true,
+      complete: function(results) {
+        const raw = results.data;
+        const yearMap = {};
+        raw.forEach(row => {
+          const year = row['開催年'];
+          const days = parseInt(row['日数']);
+          if (!isNaN(days)) {
+            yearMap[year] = (yearMap[year] || 0) + days;
+          }
+        });
+
+        const labels = Object.keys(yearMap).sort();
+        const data = labels.map(year => yearMap[year]);
+
+        const ctx2 = document.getElementById('kaigiChart').getContext('2d');
+        new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '会議日数合計',
+              data: data,
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: '年度別 会議日数合計',
+                font: {
+                  size: 20
+                }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              },
+              legend: {
+                display: false
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
