@@ -23,9 +23,9 @@
 ファイルをクローンまたはダウンロードし、`index.html` をブラウザで開くことで動作します。
 
 ```bash
-git clone https://github.com/mzksoup/meguro-kaiha.git
-cd meguro-kaiha
-open index.html
+$ git clone https://github.com/mzksoup/meguro-kaiha.git
+$ cd meguro-kaiha
+$ open index.html
 ```
 
 ## 補足
